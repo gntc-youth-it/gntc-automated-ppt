@@ -3,7 +3,19 @@ import './App.css';
 import { parseInput } from './utils/parser';
 import { generatePPT } from './utils/pptGenerator';
 
-const DEFAULT_TEXT = `# 감사해 시험이
+const DEFAULT_TEXT = `# 제목은 이렇게 쓰면 됩니다.
+## 찬양위치를 써주시면 됩니다.
+가사는 엔터를 잘 맞춰서
+써주시면 됩니다.
+//
+새슬라이드는 슬래시
+두개로 구분합니다.
+//
+새로운 찬양을 시작하려면
+샾을 입력하셔서 시작합니다.
+//
+예시를 확인해 보시길 바랍니다.
+# 감사해 시험이
 ## 은혜와진리찬양 004장
 감사해 시험이 닥쳐 올 때에
 주께서 인도하시니 두려움 없네
@@ -13,14 +25,6 @@ const DEFAULT_TEXT = `# 감사해 시험이
 //
 나의 모든 생활 속에서
 주님을 찬양하리라
-
-# 주님 다시 오실 때까지
-## 소리엘
-주님 다시 오실 때까지
-나는 이 길을 가리라
-//
-좁은 문 좁은 길
-나의 십자가 지고
 `;
 
 function App() {
