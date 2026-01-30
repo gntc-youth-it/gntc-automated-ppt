@@ -10,54 +10,66 @@
  * @param {string} text 
  * @returns {Object} { title, source, slides: string[] }
  */
+/**
+ * Parses the input text into a structured format for PPT generation.
+ * Supports multiple songs.
+ * 
+ * Format assumptions:
+ * # Title : Starts a new song
+ * ## Source : Sets the source for the current song
+ * // : Slide delimiter
+ * 
+ * @param {string} text 
+ * @returns {Array<{ title: string, source: string, slides: string[] }>}
+ */
 export const parseInput = (text) => {
-  if (!text) return { title: '', source: '', slides: [] };
+  if (!text) return [];
 
   const lines = text.split('\n');
-  let title = '';
-  let source = '';
-  let remainingArgs = [];
+  const songs = [];
+  let currentSong = { title: '', source: '', slides: [] };
+  let currentLyrics = [];
 
-  // Extract Title (Line 1)
-  if (lines.length > 0) {
-    title = lines[0].trim();
-  }
+  const finalizeSong = () => {
+    if (currentSong.title || currentSong.source || currentLyrics.length > 0) {
+      // Process the last chunk of lyrics into slides
+      const joinedLyrics = currentLyrics.join('\n').trim();
+      if (joinedLyrics) {
+        const slides = joinedLyrics.split('//').map(s => s.trim()).filter(s => s !== '');
+        currentSong.slides.push(...slides);
+      }
 
-  // Extract Source (Line 2)
-  if (lines.length > 1) {
-    source = lines[1].trim();
-  }
-
-  // Find where the lyrics start.
-  // We look for "---" or just start from line 3.
-  let startIndex = 2;
-  
-  // Checking if there is a specific separator "---" in the first few lines?
-  // User prompt said:
-  // 첫번째줄: 제목
-  // 두번째줄: 출처
-  // ---: 가사시작
-  // So likely the 3rd line is "---".
-  
-  const separatorIndex = lines.findIndex(line => line.trim().startsWith('---'));
-  if (separatorIndex !== -1) {
-      // If we found a separator, lyrics start after it.
-      // But we should also be careful if the separator is line 1 or 2 (unlikely based on prompt).
-      startIndex = separatorIndex + 1;
-  }
-
-  // Join the remaining lines to process the // separator
-  const remainingText = lines.slice(startIndex).join('\n');
-
-  // Split by "//" for slides
-  // We should also handle the case where "---" might not exist or the user just starts typing.
-  // But strict adherence to the prompt implies line 3 is separator.
-  
-  const slides = remainingText.split('//').map(slide => slide.trim()).filter(slide => slide !== '');
-
-  return {
-    title,
-    source,
-    slides
+      // Only add if it has content
+      if (currentSong.title || currentSong.source || currentSong.slides.length > 0) {
+        songs.push(currentSong);
+      }
+    }
   };
+
+  lines.forEach(line => {
+    const trimmed = line.trim();
+
+    if (trimmed.startsWith('# ')) {
+      // New Song Title detected -> Finalize previous song
+      finalizeSong();
+
+      // Start new song
+      currentSong = { title: trimmed.substring(2).trim(), source: '', slides: [] };
+      currentLyrics = [];
+    } else if (trimmed.startsWith('## ')) {
+      // Source detected
+      currentSong.source = trimmed.substring(3).trim();
+    } else if (trimmed === '//') {
+      // Explicit slide break (handled in lyrics processing but good to keep clean buffer)
+      currentLyrics.push(trimmed);
+    } else {
+      // Lyrics or empty lines
+      currentLyrics.push(line);
+    }
+  });
+
+  // Finalize the last song
+  finalizeSong();
+
+  return songs;
 };

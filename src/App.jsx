@@ -1,11 +1,10 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import './App.css';
 import { parseInput } from './utils/parser';
 import { generatePPT } from './utils/pptGenerator';
 
-const DEFAULT_TEXT = `감사해 시험이
-은혜와진리찬양 004장
----
+const DEFAULT_TEXT = `# 감사해 시험이
+## 은혜와진리찬양 004장
 감사해 시험이 닥쳐 올 때에
 주께서 인도하시니 두려움 없네
 //
@@ -14,15 +13,51 @@ const DEFAULT_TEXT = `감사해 시험이
 //
 나의 모든 생활 속에서
 주님을 찬양하리라
+
+# 주님 다시 오실 때까지
+## 소리엘
+주님 다시 오실 때까지
+나는 이 길을 가리라
+//
+좁은 문 좁은 길
+나의 십자가 지고
 `;
 
 function App() {
-  const [inputText, setInputText] = useState(DEFAULT_TEXT);
+  const [inputText, setInputText] = useState(() => localStorage.getItem('church-ppt-input') || DEFAULT_TEXT);
+  const [verticalAlign, setVerticalAlign] = useState(() => localStorage.getItem('church-ppt-align') || 'top');
+  const [titleFontSize, setTitleFontSize] = useState(() => Number(localStorage.getItem('church-ppt-title-size')) || 54);
+  const [lyricsFontSize, setLyricsFontSize] = useState(() => Number(localStorage.getItem('church-ppt-lyrics-size')) || 44);
+  const [showSongInfo, setShowSongInfo] = useState(() => {
+    const saved = localStorage.getItem('church-ppt-show-info');
+    return saved !== null ? saved === 'true' : true;
+  });
+
+  // Persist state changes
+  useEffect(() => {
+    localStorage.setItem('church-ppt-input', inputText);
+  }, [inputText]);
+
+  useEffect(() => {
+    localStorage.setItem('church-ppt-align', verticalAlign);
+  }, [verticalAlign]);
+
+  useEffect(() => {
+    localStorage.setItem('church-ppt-title-size', titleFontSize);
+  }, [titleFontSize]);
+
+  useEffect(() => {
+    localStorage.setItem('church-ppt-lyrics-size', lyricsFontSize);
+  }, [lyricsFontSize]);
+
+  useEffect(() => {
+    localStorage.setItem('church-ppt-show-info', showSongInfo);
+  }, [showSongInfo]);
 
   const parsedData = useMemo(() => parseInput(inputText), [inputText]);
 
   const handleGenerate = () => {
-    generatePPT(parsedData);
+    generatePPT(parsedData, { verticalAlign, titleFontSize, lyricsFontSize, showSongInfo });
   };
 
   return (
@@ -35,6 +70,62 @@ function App() {
             Download PPTX
           </button>
         </div>
+
+        {/* Controls Container */}
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.8rem', backgroundColor: '#252525', padding: '1rem', borderRadius: '8px', border: '1px solid #333' }}>
+
+          {/* Alignment Control */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#eee' }}>
+            <label>Vertical Align</label>
+            <select
+              value={verticalAlign}
+              onChange={(e) => setVerticalAlign(e.target.value)}
+              style={{ padding: '0.3rem', borderRadius: '4px', backgroundColor: '#333', color: 'white', border: '1px solid #555' }}
+            >
+              <option value="top">Top</option>
+              <option value="middle">Middle</option>
+              <option value="bottom">Bottom</option>
+            </select>
+          </div>
+
+          {/* Title Size Control */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#eee' }}>
+            <label>Title Size ({titleFontSize}pt)</label>
+            <input
+              type="range"
+              min="30"
+              max="100"
+              value={titleFontSize}
+              onChange={(e) => setTitleFontSize(Number(e.target.value))}
+              style={{ width: '120px', cursor: 'pointer' }}
+            />
+          </div>
+
+          {/* Lyrics Size Control */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#eee' }}>
+            <label>Lyrics Size ({lyricsFontSize}pt)</label>
+            <input
+              type="range"
+              min="20"
+              max="80"
+              value={lyricsFontSize}
+              onChange={(e) => setLyricsFontSize(Number(e.target.value))}
+              style={{ width: '120px', cursor: 'pointer' }}
+            />
+          </div>
+
+          {/* Show Song Info Toggle */}
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', color: '#eee' }}>
+            <label htmlFor="showSongInfo">Show Song Info</label>
+            <input
+              id="showSongInfo"
+              type="checkbox"
+              checked={showSongInfo}
+              onChange={(e) => setShowSongInfo(e.target.checked)}
+              style={{ width: '20px', height: '20px', cursor: 'pointer' }}
+            />
+          </div>
+        </div>
         <textarea
           className="lyric-input"
           value={inputText}
@@ -42,7 +133,7 @@ function App() {
           placeholder="Enter lyrics here..."
         />
         <div style={{ color: '#888', fontSize: '0.8rem' }}>
-          Format: Line 1: Title, Line 2: Source, ---: Splitter, //: New Slide
+          Format: # Title, ## Source, // New Slide
         </div>
       </div>
 
@@ -50,27 +141,45 @@ function App() {
       <div className="preview-section">
         <div className="preview-header">Slide Preview</div>
 
-        {/* Slide 1: Title Slide */}
-        <div className="slide-preview">
-          <div className="slide-title">{parsedData.title || "(Title)"}</div>
-          <div className="slide-source">{parsedData.source || "(Source)"}</div>
-        </div>
+        {/* Iterate over Songs */}
+        {parsedData.map((song, songIndex) => (
+          <div key={songIndex} style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
+            {/* Visual Separator for Songs */}
+            {songIndex > 0 && <hr style={{ borderColor: '#333', width: '100%', margin: '1rem 0' }} />}
 
-        {/* Slide 2+: Lyrics Slides */}
-        {parsedData.slides.map((slideText, index) => (
-          <div key={index} className="slide-preview">
-            <div className="slide-header">
-              {parsedData.title} ({parsedData.source})
+            {/* Slide 1: Title Slide */}
+            <div className="slide-preview">
+              <div className="slide-title" style={{ fontSize: `${Math.max(titleFontSize * 0.6, 20)}px` }}>
+                {song.title || "(Title)"}
+              </div>
+              <div className="slide-source">{song.source || "(Source)"}</div>
             </div>
-            <div className="slide-content">
-              {slideText}
-            </div>
+
+            {/* Slide 2+: Lyrics Slides */}
+            {song.slides.map((slideText, index) => (
+              <div key={index} className="slide-preview">
+                {showSongInfo && (
+                  <div className="slide-header">
+                    {song.title} ({song.source})
+                  </div>
+                )}
+                <div
+                  className="slide-content"
+                  style={{
+                    justifyContent: verticalAlign === 'top' ? 'flex-start' : verticalAlign === 'bottom' ? 'flex-end' : 'center',
+                    fontSize: `${Math.max(lyricsFontSize * 0.5, 12)}px` // Scale down for preview
+                  }}
+                >
+                  {slideText}
+                </div>
+              </div>
+            ))}
           </div>
         ))}
 
-        {parsedData.slides.length === 0 && (
+        {parsedData.length === 0 && (
           <div style={{ textAlign: 'center', color: '#666', padding: '2rem' }}>
-            Add lyrics separated by // to see more slides.
+            Start with # Title to create slides.
           </div>
         )}
       </div>

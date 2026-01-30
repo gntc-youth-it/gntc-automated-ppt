@@ -2,8 +2,10 @@
 :root {
   --bg-color: #1a1a1a;
   --text-color: #f0f0f0;
-  --accent-color: #646cff; /* Vite purple, keeping it simple or changing to a gold? Let's use Gold/Yellow to match the theme */
-  --primary-color: #eab308; /* Yellow-500 equivalent */
+  --accent-color: #646cff;
+  /* Vite purple, keeping it simple or changing to a gold? Let's use Gold/Yellow to match the theme */
+  --primary-color: #eab308;
+  /* Yellow-500 equivalent */
   --border-color: #333;
 }
 
@@ -136,11 +138,19 @@ textarea.lyric-input:focus {
 }
 
 .slide-content {
+  display: flex;
+  flex-direction: column;
+  /* justify-content is handled inline in JSX based on state */
+  height: 70%;
+  /* Matches the PPT generation height */
+  width: 90%;
   color: #FFFFFF;
   font-size: 1.5rem;
   font-weight: bold;
   white-space: pre-wrap;
   line-height: 1.5;
+  margin-top: 10%;
+  /* Roughly position it where the text box starts (y=1.0 relative to slide) */
 }
 
 /* Button */
